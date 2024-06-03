@@ -99,10 +99,12 @@ class Llama:
         tokenizer = Tokenizer(model_path=tokenizer_path)
         assert model_args.vocab_size == tokenizer.n_words
         if torch.cuda.is_bf16_supported():
-            torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
+            # torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
+            model = Transformer(model_args).bfloat16().cuda()
         else:
-            torch.set_default_tensor_type(torch.cuda.HalfTensor)
-        model = Transformer(model_args)
+            # torch.set_default_tensor_type(torch.cuda.HalfTensor)
+            model = Transformer(model_args).half().cuda()
+        # model = Transformer(model_args)
         model.load_state_dict(checkpoint, strict=False)
         print(f"Loaded in {time.time() - start_time:.2f} seconds")
 
@@ -170,7 +172,7 @@ class Llama:
                 ignore_index=pad_id,
             )
 
-        stop_tokens = torch.tensor(list(self.tokenizer.stop_tokens))
+        stop_tokens = torch.tensor(list(self.tokenizer.stop_tokens)).cuda()
 
         for cur_pos in range(min_prompt_len, total_len):
             logits = self.model.forward(tokens[:, prev_pos:cur_pos], prev_pos)
